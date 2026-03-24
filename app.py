@@ -88,6 +88,5 @@ if st.session_state.historico:
     st.metric("Total Min", round(df["Minutos"].sum(), 1))
 
     st.dataframe(df)
-
-    csv = df.to_csv(index=False).encode("utf-8")
+   csv = df.to_csv(index=False).encode("utf-8")
     st.download_button("Exportar", csv, "instaltime.csv")
