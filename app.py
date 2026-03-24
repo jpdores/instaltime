@@ -30,7 +30,6 @@ materiais = {
     "Passagem de Fios": "Metros",
     "Tomadas / Interruptores": "Unidades",
     "Tomadas ITED": "Unidades"
-    "caixas":"unidades"
 }
 
 material = st.selectbox("Material", list(materiais.keys()))
