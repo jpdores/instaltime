@@ -104,5 +104,5 @@ for i, row in df.iterrows():
             df_save.to_csv("dados_instaltime.csv", index=False)
             
             st.rerun()
-   csv = df.to_csv(index=False).encode("utf-8")
+
     st.download_button("Exportar", csv, "instaltime.csv")
