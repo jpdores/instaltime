@@ -1,5 +1,5 @@
 import streamlit as st
-import pandas as pd
+import pandas as p
 from datetime import datetime
 import os
 
@@ -87,23 +87,7 @@ if st.session_state.historico:
     st.metric("Total €", round(df["Custo (€)"].sum(), 2))
     st.metric("Total Min", round(df["Minutos"].sum(), 1))
 
-    st.subheader("📋 Registos")
-
-for i, row in df.iterrows():
-    col1, col2 = st.columns([4,1])
-    
-    with col1:
-        st.write(f"{row['Data']} | {row['Obra']} | {row['Material']} | {row['Qtd']} | {row['Minutos']} min | {row['Custo (€)']}€")
-    
-    with col2:
-        if st.button("❌", key=f"del_{i}"):
-            st.session_state.historico.pop(i)
-            
-            # atualizar ficheiro
-            df_save = pd.DataFrame(st.session_state.historico)
-            df_save.to_csv("dados_instaltime.csv", index=False)
-            
-            st.rerun()
+    st.dataframe(df)
 
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button("Exportar", csv, "instaltime.csv")
