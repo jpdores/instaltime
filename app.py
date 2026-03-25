@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 import os
 
-st.set_page_config(page_title="InstalTime Pro", page_icon="🏗️")
+st.set_page_config(page_title="Energipax Pro", page_icon="🏗️")
 
 FILE = "dados_instaltime.csv"
 
