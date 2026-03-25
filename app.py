@@ -27,7 +27,12 @@ if "modo_guardar" not in st.session_state:
 if "materiais_guardados" not in st.session_state:
     st.session_state.materiais_guardados = []
 
-st.title("🏗️ InstalTime Pro")
+st.markdown("""
+<h1 style='text-align: center; margin-bottom:0;'>🏗️ InstalTime Pro</h1>
+<p style='text-align: center; font-size:14px; margin-top:0; color:black;'>
+<span style='color:red; font-weight:bold;'>E</span>nergipax
+</p>
+""", unsafe_allow_html=True)
 
 # --- SIDEBAR ---
 with st.sidebar:
