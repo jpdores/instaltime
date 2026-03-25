@@ -28,11 +28,37 @@ if "materiais_guardados" not in st.session_state:
     st.session_state.materiais_guardados = []
 
 st.markdown("""
-<h1 style='text-align: center; margin-bottom:0;'>🏗️ InstalTime Pro</h1>
-<p style='text-align: center; font-size:14px; margin-top:0;'>
-<span style='color:red; font-weight:bold;'>E</span>
-<span style='color:inherit;'>nergipax</span>
-</p>
+<style>
+.titulo {
+    text-align: center;
+    font-size: 34px;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.subtitulo {
+    text-align: center;
+    font-size: 16px;
+    margin-top: 0;
+}
+
+.linha {
+    height:1px;
+    background-color:rgba(150,150,150,0.3);
+    margin-top:10px;
+    margin-bottom:20px;
+}
+</style>
+
+<div class="titulo">🏗️ InstalTime Pro</div>
+
+<div class="subtitulo">
+    <span>by </span>
+    <span style="color:red; font-size:20px; font-weight:700;">E</span>
+    <span>nergipax</span>
+</div>
+
+<div class="linha"></div>
 """, unsafe_allow_html=True)
 
 # --- SIDEBAR ---
