@@ -9,7 +9,7 @@ FILE = "dados_instaltime.csv"
 
 if "historico" not in st.session_state:
     if os.path.exists(FILE):
-    try:
+        try:
         df_load = pd.read_csv(FILE)
         st.session_state.historico = df_load.to_dict("records")
     except:
