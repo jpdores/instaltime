@@ -24,6 +24,8 @@ if "cronometro_ativo" not in st.session_state:
 
 if "modo_guardar" not in st.session_state:
     st.session_state.modo_guardar = False
+    if "materiais_guardados" not in st.session_state:
+    st.session_state.materiais_guardados = []
 
 st.title("🏗️ InstalTime Pro")
 
