@@ -34,16 +34,13 @@ with st.sidebar:
 # --- INPUTS ---
 obra = st.text_input("Nome da Obra")
 
-materiais = {
-    "Tubagem 20mm": "Metros",
-    "Tubagem 25mm": "Metros",
-    "Passagem de Fios": "Metros",
-    "Tomadas / Interruptores": "Unidades",
-    "Tomadas ITED": "Unidades"
-}
+# --- MATERIAL PERSONALIZADO ---
+material = st.text_input("Material (escreve o que quiseres)")
 
-material = st.selectbox("Material", list(materiais.keys()))
-unidade = materiais[material]
+unidade = st.selectbox(
+    "Unidade",
+    ["Metros", "Unidades", "Horas", "Outro"]
+)
 
 # --- BOTÕES ---
 col1, col2 = st.columns(2)
