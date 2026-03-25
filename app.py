@@ -17,7 +17,6 @@ if "historico" not in st.session_state:
 else:
     st.session_state.historico = []
         
-
 if "cronometro_ativo" not in st.session_state:
     st.session_state.cronometro_ativo = False
 
