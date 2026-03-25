@@ -29,8 +29,9 @@ if "materiais_guardados" not in st.session_state:
 
 st.markdown("""
 <h1 style='text-align: center; margin-bottom:0;'>🏗️ InstalTime Pro</h1>
-<p style='text-align: center; font-size:14px; margin-top:0; color:black;'>
-<span style='color:red; font-weight:bold;'>E</span>nergipax
+<p style='text-align: center; font-size:14px; margin-top:0;'>
+<span style='color:red; font-weight:bold;'>E</span>
+<span style='color:inherit;'>nergipax</span>
 </p>
 """, unsafe_allow_html=True)
 
