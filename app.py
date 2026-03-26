@@ -54,34 +54,42 @@ if st.session_state.cronometro_ativo:
     time.sleep(1)
     st.button("Atualizar Visor")
     
-# --- GUARDAR NO GOOGLE SHEETS ---
+# --- GUARDAR NO GOOGLE SHEETS (VERSÃO FORÇADA) ---
 if st.session_state.modo_guardar:
     with st.container(border=True):
         st.write("### 💾 Finalizar Registo")
         qtd = st.number_input("Quantidade Instalada", min_value=0.01, value=1.0)
         
-        # Esta linha abaixo tem de ter exatamente 8 espaços (ou 2 tabs) de margem
         if st.button("✅ GUARDAR DEFINITIVO", use_container_width=True):
-            custo_total = st.session_state.minutos_finais * (valor_hora / 60)
-            
-            novo_registo = pd.DataFrame([{
-                "Data": datetime.now().strftime("%d/%m/%Y"),
-                "Obra": obra if obra else "Geral",
-                "Material": material if material else "N/A",
-                "Qtd": float(qtd),
-                "Minutos": round(float(st.session_state.minutos_finais), 2),
-                "Min/Un": round(float(st.session_state.minutos_finais/qtd), 2),
-                "Custo": round(float(custo_total), 2)
-            }])
-            
             try:
-                df_existente = conn.read(ttl=0)
+                custo_total = st.session_state.minutos_finais * (valor_hora / 60)
+                
+                # Criar a linha de dados
+                novo_registo = pd.DataFrame([{
+                    "Data": datetime.now().strftime("%d/%m/%Y"),
+                    "Obra": str(obra) if obra else "Energipax",
+                    "Material": str(material) if material else "Material",
+                    "Qtd": float(qtd),
+                    "Minutos": round(float(st.session_state.minutos_finais), 2),
+                    "Min/Un": round(float(st.session_state.minutos_finais/qtd), 2),
+                    "Custo": round(float(custo_total), 2)
+                }])
+                
+                # Tenta ler a folha "Sheet1"
+                df_existente = conn.read(worksheet="Sheet1", ttl=0)
+                
+                # Junta e Grava
                 df_final = pd.concat([df_existente, novo_registo], ignore_index=True)
-                conn.update(data=df_final)
+                conn.update(worksheet="Sheet1", data=df_final)
                 
                 st.session_state.modo_guardar = False
-                st.success("Gravado com sucesso!")
+                st.success("✅ Gravado com sucesso!")
                 time.sleep(1)
                 st.rerun()
+                
             except Exception as e:
-                st.error("Erro na ligação. Verifique se a folha está como 'Editor'.")
+                st.error("Falha na gravação.")
+                st.info("Dica: Verifique se a aba da Google Sheet se chama 'Sheet1' (com S maiúsculo).")
+                # Esta linha abaixo mostra o erro real para sabermos o que é:
+                st.write(f"Erro técnico: {e}")
+)
