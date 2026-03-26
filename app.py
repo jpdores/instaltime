@@ -8,6 +8,7 @@ from streamlit_gsheets import GSheetsConnection
 st.set_page_config(page_title="Energipax Pro", page_icon="🏗️")
 
 # 2. Ligação ao Google Sheets
+# A forma correta de chamar a ligação configurada nos Secrets
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # 3. Cabeçalho
