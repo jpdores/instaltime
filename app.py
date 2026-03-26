@@ -55,30 +55,36 @@ if st.session_state.cronometro_ativo:
     st.button("Atualizar Visor")
 
 # --- GUARDAR NO GOOGLE SHEETS ---
-if st.session_state.modo_guardar:
-    with st.container(border=True):
-        qtd = st.number_input("Quantidade", min_value=0.1, value=1.0)
+
         if st.button("✅ GUARDAR DEFINITIVO", use_container_width=True):
             custo = st.session_state.minutos_finais * (valor_hora / 60)
             
             # Novo registo
             novo_dado = pd.DataFrame([{
                 "Data": datetime.now().strftime("%d/%m/%Y"),
-                "Obra": obra,
-                "Material": material,
+                "Obra": obra if obra else "Geral",
+                "Material": material if material else "N/A",
                 "Qtd": qtd,
                 "Minutos": round(st.session_state.minutos_finais, 2),
                 "Min/Un": round(st.session_state.minutos_finais/qtd, 2),
                 "Custo": round(custo, 2)
             }])
             
-            # Junta ao histórico e envia para o Google
-            df_atualizado = pd.concat([df_historico, novo_dado], ignore_index=True)
-            conn.update(data=df_atualizado)
+            # Tenta ler os dados atuais. Se falhar, usa o novo dado como inicial.
+            try:
+                df_existente = conn.read(ttl=0)
+                df_final = pd.concat([df_existente, novo_dado], ignore_index=True)
+            except:
+                df_final = novo_dado
+
+            # ENVIO PARA O GOOGLE (Com correção para o erro que deu)
+            conn.update(data=df_final)
             
             st.session_state.modo_guardar = False
-            st.success("Gravado no Google Sheets!")
+            st.success("Gravado com sucesso!")
+            time.sleep(1)
             st.rerun()
+
 
 # --- MOSTRAR HISTÓRICO REAL ---
 if not df_historico.empty:
