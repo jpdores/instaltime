@@ -1,21 +1,15 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import os
 import time
+from streamlit_gsheets import GSheetsConnection
 
 st.set_page_config(page_title="InstalTime Pro", page_icon="🏗️")
 
-FILE = "dados_instaltime.csv"
+# --- LIGAÇÃO GOOGLE SHEETS ---
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-# --- INICIALIZAÇÃO DE MEMÓRIA (SESSION STATE) ---
-if "historico" not in st.session_state:
-    if os.path.exists(FILE):
-        try:
-            st.session_state.historico = pd.read_csv(FILE).to_dict("records")
-        except: st.session_state.historico = []
-    else: st.session_state.historico = []
-
+# --- INICIALIZAÇÃO DE MEMÓRIA ---
 if "cronometro_ativo" not in st.session_state:
     st.session_state.cronometro_ativo = False
 if "inicio_unix" not in st.session_state:
@@ -47,24 +41,23 @@ with col_obra:
 with col_mat:
     material = st.text_input("Material", placeholder="Ex: Tubo 20mm")
 
-unidade = st.segmented_control("Unidade", ["Metros", "Unidades", "Horas", "Outro"], default="Metros")
+unidade = st.radio("Unidade", ["Metros", "Unidades", "Horas", "Outro"], horizontal=True)
 
 # --- LÓGICA DO CRONÓMETRO ---
-st.write("##") # Espaçamento
+st.write("##") 
 
 c1, c2 = st.columns(2)
 
 with c1:
     if not st.session_state.cronometro_ativo and not st.session_state.modo_guardar:
         if st.button("▶️ INICIAR TRABALHO", use_container_width=True, type="primary"):
-            st.session_state.inicio_unix = time.time() # Usa Unix Time para estabilidade
+            st.session_state.inicio_unix = time.time()
             st.session_state.cronometro_ativo = True
             st.rerun()
 
 with c2:
     if st.session_state.cronometro_ativo:
         if st.button("⏹️ PARAR AGORA", use_container_width=True, type="secondary"):
-            # Calcula o tempo final exato no momento do clique
             duracao_segundos = time.time() - st.session_state.inicio_unix
             st.session_state.minutos_finais = duracao_segundos / 60
             st.session_state.cronometro_ativo = False
@@ -76,58 +69,50 @@ if st.session_state.cronometro_ativo:
     tempo_passado = time.time() - st.session_state.inicio_unix
     mins, segs = divmod(int(tempo_passado), 60)
     st.metric("⏳ Tempo Decorrido", f"{mins:02d}:{segs:02d}")
-    time.sleep(1) # Ajuda a manter a interface viva
+    time.sleep(1)
     st.button("🔄 Atualizar Relógio")
 
-# --- JANELA DE FINALIZAÇÃO ---
+# --- JANELA DE FINALIZAÇÃO E ENVIO PARA GOOGLE ---
 if st.session_state.modo_guardar:
     with st.container(border=True):
         st.write(f"#### 💾 Finalizar Registo")
         st.write(f"Tempo total: **{st.session_state.minutos_finais:.2f} min**")
         qtd = st.number_input(f"Quantidade instalada ({unidade})", min_value=0.01, value=1.0)
         
-        if st.button("✅ CONFIRMAR E GUARDAR", use_container_width=True):
-            custo = st.session_state.minutos_finais * (valor_hora / 60)
-            perf = st.session_state.minutos_finais / qtd
-            
-            registo = {
-                "Data": datetime.now().strftime("%d/%m/%Y"),
-                "Obra": obra if obra else "N/A",
-                "Material": material if material else "N/A",
-                "Qtd": qtd,
-                "Minutos": round(st.session_state.minutos_finais, 2),
-                "Min/Un": round(perf, 2),
-                "Custo (€)": round(custo, 2)
-            }
-            
-            st.session_state.historico.append(registo)
-            pd.DataFrame(st.session_state.historico).to_csv(FILE, index=False)
-            
-            st.session_state.modo_guardar = False
-            st.success("Dados guardados com sucesso!")
-            st.rerun()
+        if st.button("✅ CONFIRMAR E GUARDAR NO GOOGLE", use_container_width=True):
+            try:
+                custo = st.session_state.minutos_finais * (valor_hora / 60)
+                perf = st.session_state.minutos_finais / qtd
+                
+                novo_registo = pd.DataFrame([{
+                    "Data": datetime.now().strftime("%d/%m/%Y"),
+                    "Obra": obra if obra else "N/A",
+                    "Material": material if material else "N/A",
+                    "Qtd": float(qtd),
+                    "Minutos": round(float(st.session_state.minutos_finais), 2),
+                    "Min/Un": round(float(perf), 2),
+                    "Custo": round(float(custo), 2)
+                }])
+                
+                # Lê dados antigos da Google Sheet
+                df_antigo = conn.read(worksheet="Sheet1", ttl=0)
+                # Junta com o novo
+                df_final = pd.concat([df_antigo, novo_registo], ignore_index=True)
+                # Atualiza a Google Sheet
+                conn.update(worksheet="Sheet1", data=df_final)
+                
+                st.session_state.modo_guardar = False
+                st.success("Dados enviados para a nuvem!")
+                time.sleep(1)
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erro ao gravar no Google: {e}")
 
-# --- TABELA DE REGISTOS ---
-if st.session_state.historico:
-    st.divider()
-    df = pd.DataFrame(st.session_state.historico)
-    
-    st.subheader("📋 Histórico de Hoje")
-    st.dataframe(df, use_container_width=True, hide_index=True)
-    
-    # Métricas
-    m1, m2, m3 = st.columns(3)
-    m1.metric("💰 Total", f"{df['Custo (€)'].sum():.2f}€")
-    m2.metric("⏱️ Minutos", f"{df['Minutos'].sum():.1f}")
-    m3.metric("⚡ Média", f"{df['Min/Un'].mean():.2f} min/{unidade[:2]}")
-
-    # Exportar e Limpar
-    col_ex, col_limp = st.columns(2)
-    with col_ex:
-        csv = df.to_csv(index=False).encode("utf-8")
-        st.download_button("📥 Descarregar CSV", csv, "relatorio_energipax.csv", use_container_width=True)
-    with col_limp:
-        if st.button("🗑️ Limpar Tudo", use_container_width=True):
-            st.session_state.historico = []
-            if os.path.exists(FILE): os.remove(FILE)
-            st.rerun()
+# --- TABELA DE REGISTOS (Vinda do Google) ---
+st.divider()
+st.subheader("📋 Histórico Geral (Nuvem)")
+try:
+    df_google = conn.read(worksheet="Sheet1", ttl=0)
+    st.dataframe(df_google.tail(10), use_container_width=True, hide_index=True)
+except:
+    st.info("A aguardar ligação com a Google Sheet...")
