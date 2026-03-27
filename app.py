@@ -60,7 +60,8 @@ if st.session_state.modo_guardar:
                 }])
                 
                 # OPERAÇÃO CRÍTICA: Ler e Atualizar com URL direto
-                conn.novo = novo.fillna("")write(
+                conn.novo = novo.fillna("")
+                write(
     spreadsheet=URL_FOLHA,
     worksheet="Sheet1",
     data=novo,
