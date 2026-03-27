@@ -11,15 +11,10 @@ FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfw_A3FyZ7bQzdB_j5vINdtODa3
 
 # --- FUNÇÃO DE ENVIO ---
 def enviar_para_form(registo):
-    data = {
-        "entry.1111111111": registo["Data"],
-        "entry.2222222222": registo["Obra"],
-        "entry.3333333333": registo["Material"],
-        "entry.4444444444": registo["Qtd"],
-        "entry.5555555555": registo["Minutos"],
-        "entry.6666666666": registo["Custo"]
-    }
-    requests.post(FORM_URL, data=data)
+    requests.post(
+        "https://docs.google.com/forms/d/e/1FAIpQLSfw_A3FyZ7bQzdB_j5vINdtODa3dcBZ0d61B6b03ZMjZOekag/formResponse",
+        data=registo
+    )
 
 # --- ESTADOS ---
 if "cronometro_ativo" not in st.session_state:
