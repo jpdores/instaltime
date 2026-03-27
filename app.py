@@ -2,27 +2,24 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import time
-from streamlit_gsheets import GSheetsConnection
+import requests
 
 st.set_page_config(page_title="InstalTime Pro", page_icon="🏗️")
 
-# --- LIGAÇÃO ---
-URL_FOLHA = "https://docs.google.com/spreadsheets/d/1-JaEy3L1Rhch29AkV-wYFLsqb2o_NX38I2iABNsSN4Q/edit"
+# 👉 LINK DO TEU FORM (já convertido para envio)
+FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfw_A3FyZ7bQzdB_j5vINdtODa3dcBZ0d61B6b03ZMjZOekag/formResponse"
 
-conn = st.connection("gsheets", type=GSheetsConnection)
-
-# --- INTERFACE ---
-st.markdown("""
-<style>
-.titulo { text-align: center; font-size: 34px; font-weight: 700; margin-bottom: 0; }
-.subtitulo { text-align: center; font-size: 16px; margin-top: 0; }
-.stButton>button { border-radius: 10px; height:60px; font-size:18px; }
-</style>
-
-<div class="titulo">🏗️ InstalTime Pro</div>
-<div class="subtitulo">by <span style="color:red; font-size:20px; font-weight:700;">E</span>nergipax</div>
-<hr>
-""", unsafe_allow_html=True)
+# --- FUNÇÃO DE ENVIO ---
+def enviar_para_form(registo):
+    data = {
+        "entry.1111111111": registo["Data"],
+        "entry.2222222222": registo["Obra"],
+        "entry.3333333333": registo["Material"],
+        "entry.4444444444": registo["Qtd"],
+        "entry.5555555555": registo["Minutos"],
+        "entry.6666666666": registo["Custo"]
+    }
+    requests.post(FORM_URL, data=data)
 
 # --- ESTADOS ---
 if "cronometro_ativo" not in st.session_state:
@@ -34,9 +31,19 @@ if "inicio_unix" not in st.session_state:
 if "modo_guardar" not in st.session_state:
     st.session_state.modo_guardar = False
 
-# --- INPUTS ---
-obra = st.text_input("Obra", "Geral")
-material = st.text_input("Material", "Instalação")
+# --- INTERFACE ---
+st.markdown("""
+<div style="text-align:center; font-size:34px; font-weight:700;">
+🏗️ InstalTime Pro
+</div>
+<div style="text-align:center;">
+by <span style="color:red; font-size:20px; font-weight:700;">E</span>nergipax
+</div>
+<hr>
+""", unsafe_allow_html=True)
+
+obra = st.text_input("Obra")
+material = st.text_input("Material")
 valor_hora = st.sidebar.number_input("Valor/hora (€)", value=20.0)
 
 # --- CRONÓMETRO ---
@@ -44,7 +51,7 @@ c1, c2 = st.columns(2)
 
 with c1:
     if not st.session_state.cronometro_ativo and not st.session_state.modo_guardar:
-        if st.button("▶️ INICIAR", use_container_width=True, type="primary"):
+        if st.button("▶️ INICIAR", use_container_width=True):
             st.session_state.inicio_unix = time.time()
             st.session_state.cronometro_ativo = True
             st.rerun()
@@ -57,7 +64,7 @@ with c2:
             st.session_state.modo_guardar = True
             st.rerun()
 
-# --- MOSTRAR TEMPO ---
+# --- TEMPO ---
 if st.session_state.cronometro_ativo:
     tempo = time.time() - st.session_state.inicio_unix
     mins, segs = divmod(int(tempo), 60)
@@ -65,58 +72,27 @@ if st.session_state.cronometro_ativo:
 
 # --- GUARDAR ---
 if st.session_state.modo_guardar:
-    with st.container(border=True):
-        st.subheader("💾 Finalizar Registo")
+    qtd = st.number_input("Quantidade", min_value=0.1, value=1.0)
 
-        qtd = st.number_input("Quantidade", min_value=0.1, value=1.0)
+    if st.button("✅ GUARDAR", use_container_width=True):
+        minutos = round(st.session_state.minutos_finais, 2)
+        custo = round(minutos * (valor_hora / 60), 2)
 
-        if st.button("✅ GUARDAR", use_container_width=True):
+        registo = {
+            "Data": datetime.now().strftime("%d/%m/%Y"),
+            "Obra": obra,
+            "Material": material,
+            "Qtd": qtd,
+            "Minutos": minutos,
+            "Custo": custo
+        }
 
-            try:
-                minutos = round(st.session_state.minutos_finais, 2)
-                custo = round(minutos * (valor_hora / 60), 2)
-                perf = round(minutos / qtd, 2)
+        try:
+            enviar_para_form(registo)
+            st.success("✅ Gravado na folha!")
 
-                novo = pd.DataFrame([{
-                    "Data": datetime.now().strftime("%d/%m/%Y"),
-                    "Obra": obra,
-                    "Material": material,
-                    "Qtd": float(qtd),
-                    "Minutos": minutos,
-                    "Min/Un": perf,
-                    "Custo": custo
-                }])
+            st.session_state.modo_guardar = False
+            st.rerun()
 
-                # Limpar valores vazios
-                novo = novo.fillna("")
-
-                # 👉 ESCREVER NA FOLHA (APPEND)
-                conn.write(
-                    spreadsheet=URL_FOLHA,
-                    worksheet="Sheet1",
-                    data=novo,
-                    append=True
-                )
-
-                st.success("✅ Gravado com sucesso!")
-
-                # Reset
-                st.session_state.modo_guardar = False
-                st.session_state.inicio_unix = None
-
-                time.sleep(1)
-                st.rerun()
-
-            except Exception as e:
-                st.error(f"Erro ao gravar: {e}")
-
-# --- HISTÓRICO ---
-st.divider()
-
-try:
-    df = conn.read(spreadsheet=URL_FOLHA, worksheet="Sheet1", ttl=0)
-    st.subheader("📋 Últimos Registos")
-    st.dataframe(df.tail(5), use_container_width=True)
-
-except:
-    st.warning("Ainda sem dados ou erro de ligação.")
+        except Exception as e:
+            st.error(f"Erro: {e}")
