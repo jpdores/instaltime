@@ -60,9 +60,12 @@ if st.session_state.modo_guardar:
                 }])
                 
                 # OPERAÇÃO CRÍTICA: Ler e Atualizar com URL direto
-                df_atual = conn.read(spreadsheet=URL_FOLHA, worksheet="Sheet1", ttl=0)
-                df_final = pd.concat([df_atual, novo], ignore_index=True)
-                conn.update(spreadsheet=URL_FOLHA, worksheet="Sheet1", data=df_final)
+                conn.write(
+    spreadsheet=URL_FOLHA,
+    worksheet="Sheet1",
+    data=novo,
+    append=True
+)
                 
                 st.session_state.modo_guardar = False
                 st.success("Gravado!")
